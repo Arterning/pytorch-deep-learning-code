@@ -1,3 +1,74 @@
+import os
+import pathlib
+import torch
+
+from PIL import Image
+from torch.utils.data import Dataset
+from torchvision import transforms
+from typing import Tuple, Dict, List
+from pathlib import Path
+
+# Setup path to data folder
+data_path = Path("data/")
+image_path = data_path / "pizza_steak_sushi"
+
+# Setup train and testing paths
+train_dir = image_path / "train"
+test_dir = image_path / "test"
+
+train_dir, test_dir
+
+
+# Setup path for target directory
+target_directory = train_dir
+print(f"Target directory: {target_directory}")
+
+# Get the class names from the target directory
+class_names_found = sorted([entry.name for entry in list(os.scandir(image_path / "train"))])
+print(f"Class names found: {class_names_found}")
+
+
+
+# Make function to find classes in target directory
+def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
+    """Finds the class folder names in a target directory.
+    
+    Assumes target directory is in standard image classification format.
+
+    Args:
+        directory (str): target directory to load classnames from.
+
+    Returns:
+        Tuple[List[str], Dict[str, int]]: (list_of_class_names, dict(class_name: idx...))
+    
+    Example:
+        find_classes("food_images/train")
+        >>> (["class_1", "class_2"], {"class_1": 0, ...})
+    """
+    # 1. Get the class names by scanning the target directory
+    classes = sorted(entry.name for entry in os.scandir(directory) if entry.is_dir())
+    
+    # 2. Raise an error if class names not found
+    if not classes:
+        raise FileNotFoundError(f"Couldn't find any classes in {directory}.")
+        
+    # 3. Create a dictionary of index labels (computers prefer numerical rather than string labels)
+    class_to_idx = {cls_name: i for i, cls_name in enumerate(classes)}
+    return classes, class_to_idx
+
+
+
+
+classes, class_to_idx =  find_classes(train_dir)
+
+print(classes, class_to_idx)
+
+# Class names found: ['pizza', 'steak', 'sushi']
+# ['pizza', 'steak', 'sushi'] {'pizza': 0, 'steak': 1, 'sushi': 2}
+
+
+
+
 # Write a custom dataset class (inherits from torch.utils.data.Dataset)
 from torch.utils.data import Dataset
 
@@ -55,17 +126,19 @@ test_transforms = transforms.Compose([
 ])
 
 
+
 train_data_custom = ImageFolderCustom(targ_dir=train_dir, 
                                       transform=train_transforms)
 test_data_custom = ImageFolderCustom(targ_dir=test_dir, 
                                      transform=test_transforms)
-train_data_custom, test_data_custom
+print(train_data_custom, test_data_custom)
+print(len(train_data_custom), len(test_data_custom))
+print(train_data_custom.classes)
+print(train_data_custom.class_to_idx)
 
 
 # Check for equality amongst our custom Dataset and ImageFolder Dataset
-print((len(train_data_custom) == len(train_data)) & (len(test_data_custom) == len(test_data)))
-print(train_data_custom.classes == train_data.classes)
-print(train_data_custom.class_to_idx == train_data.class_to_idx)
-
-
+# print((len(train_data_custom) == len(train_data)) & (len(test_data_custom) == len(test_data)))
+# print(train_data_custom.classes == train_data.classes)
+# print(train_data_custom.class_to_idx == train_data.class_to_idx)
 
