@@ -1,59 +1,11 @@
-
-from torchvision import transforms
-from pathlib import Path
-
-# Setup path to data folder
-data_path = Path("data/")
-image_path = data_path / "pizza_steak_sushi"
-
-# Setup train and testing paths
-train_dir = image_path / "train"
-test_dir = image_path / "test"
-
-
-# Create simple transform
-simple_transform = transforms.Compose([ 
-    transforms.Resize((64, 64)),
-    transforms.ToTensor(),
-])
-
-
-
-
-# 1. Load and transform data
-from torchvision import datasets
-train_data_simple = datasets.ImageFolder(root=train_dir, transform=simple_transform)
-test_data_simple = datasets.ImageFolder(root=test_dir, transform=simple_transform)
-
-# 2. Turn data into DataLoaders
 import os
-from torch.utils.data import DataLoader
-
-# Setup batch size and number of workers 
-BATCH_SIZE = 32
-NUM_WORKERS = os.cpu_count()
-print(f"Creating DataLoader's with batch size {BATCH_SIZE} and {NUM_WORKERS} workers.")
-
-# Create DataLoader's
-train_dataloader_simple = DataLoader(train_data_simple, 
-                                     batch_size=BATCH_SIZE, 
-                                     shuffle=True, 
-                                     num_workers=NUM_WORKERS)
-
-test_dataloader_simple = DataLoader(test_data_simple, 
-                                    batch_size=BATCH_SIZE, 
-                                    shuffle=False, 
-                                    num_workers=NUM_WORKERS)
-
-print(train_dataloader_simple, test_dataloader_simple)
-
-
-
-
-
+from pathlib import Path
 import torch
 from torch import nn 
+from torch.utils.data import DataLoader
+from torchvision import transforms, datasets
 
+# 1. 定义模型和变换（这些可以放在全局，供子进程导入）
 class TinyVGG(nn.Module):
     """
     Model architecture copying TinyVGG from: 
@@ -62,20 +14,11 @@ class TinyVGG(nn.Module):
     def __init__(self, input_shape: int, hidden_units: int, output_shape: int) -> None:
         super().__init__()
         self.conv_block_1 = nn.Sequential(
-            nn.Conv2d(in_channels=input_shape, 
-                      out_channels=hidden_units, 
-                      kernel_size=3, # how big is the square that's going over the image?
-                      stride=1, # default
-                      padding=1), # options = "valid" (no padding) or "same" (output has same shape as input) or int for specific number 
+            nn.Conv2d(in_channels=input_shape, out_channels=hidden_units, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(in_channels=hidden_units, 
-                      out_channels=hidden_units,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1),
+            nn.Conv2d(in_channels=hidden_units, out_channels=hidden_units, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,
-                         stride=2) # default stride value is same as kernel_size
+            nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.conv_block_2 = nn.Sequential(
             nn.Conv2d(hidden_units, hidden_units, kernel_size=3, padding=1),
@@ -86,33 +29,60 @@ class TinyVGG(nn.Module):
         )
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            # Where did this in_features shape come from? 
-            # It's because each layer of our network compresses and changes the shape of our input data.
-            nn.Linear(in_features=hidden_units*16*16,
-                      out_features=output_shape)
+            nn.Linear(in_features=hidden_units*16*16, out_features=output_shape)
         )
     
     def forward(self, x: torch.Tensor):
         x = self.conv_block_1(x)
-        # print(x.shape)
         x = self.conv_block_2(x)
-        # print(x.shape)
         x = self.classifier(x)
-        # print(x.shape)
         return x
-        # return self.classifier(self.conv_block_2(self.conv_block_1(x))) # <- leverage the benefits of operator fusion
-
 
 
 # 2. 将所有执行逻辑放入 main 块中
 if __name__ == '__main__':
+    # Setup path to data folder
+    data_path = Path("data/")
+    image_path = data_path / "pizza_steak_sushi"
 
-    
+    # Setup train and testing paths
+    train_dir = image_path / "train"
+    test_dir = image_path / "test"
+
+    # Create simple transform
+    simple_transform = transforms.Compose([ 
+        transforms.Resize((64, 64)),
+        transforms.ToTensor(),
+    ])
+
+    # Load and transform data
+    train_data_simple = datasets.ImageFolder(root=train_dir, transform=simple_transform)
+    test_data_simple = datasets.ImageFolder(root=test_dir, transform=simple_transform)
+
+    # Setup batch size and number of workers 
+    BATCH_SIZE = 32
+    NUM_WORKERS = os.cpu_count()
+    print(f"Creating DataLoader's with batch size {BATCH_SIZE} and {NUM_WORKERS} workers.")
+
+    # Create DataLoader's
+    train_dataloader_simple = DataLoader(train_data_simple, 
+                                         batch_size=BATCH_SIZE, 
+                                         shuffle=True, 
+                                         num_workers=NUM_WORKERS)
+
+    test_dataloader_simple = DataLoader(test_data_simple, 
+                                        batch_size=BATCH_SIZE, 
+                                        shuffle=False, 
+                                        num_workers=NUM_WORKERS)
+
+    print(train_dataloader_simple, test_dataloader_simple)
+
+    # Setup device and model
     device = "cpu"
     torch.manual_seed(42)
-    model_0 = TinyVGG(input_shape=3, # number of color channels (3 for RGB) 
-                    hidden_units=10, 
-                    output_shape=len(train_data_simple.classes)).to(device)
+    model_0 = TinyVGG(input_shape=3, 
+                      hidden_units=10, 
+                      output_shape=len(train_data_simple.classes)).to(device)
     print(model_0)
 
     # 1. Get a batch of images and labels from the DataLoader
@@ -127,7 +97,7 @@ if __name__ == '__main__':
     with torch.inference_mode():
         pred = model_0(img_single.to(device))
         
-    # 4. Print out what's happening and convert model logits -> pred probs -> pred label
+    # 4. Print out results
     print(f"Output logits:\n{pred}\n")
     print(f"Output prediction probabilities:\n{torch.softmax(pred, dim=1)}\n")
     print(f"Output prediction label:\n{torch.argmax(torch.softmax(pred, dim=1), dim=1)}\n")
