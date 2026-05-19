@@ -89,7 +89,9 @@ img_as_array = np.asarray(img)
 plt.figure(figsize=(10, 7))
 plt.imshow(img_as_array)
 plt.title(f"Image class: {image_class} | Image shape: {img_as_array.shape} -> [height, width, color_channels]")
-plt.axis(False);
+plt.axis(False)
+
+plt.show()
 
 
 
