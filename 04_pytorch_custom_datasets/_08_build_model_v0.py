@@ -102,3 +102,8 @@ if __name__ == '__main__':
     print(f"Output prediction probabilities:\n{torch.softmax(pred, dim=1)}\n")
     print(f"Output prediction label:\n{torch.argmax(torch.softmax(pred, dim=1), dim=1)}\n")
     print(f"Actual label:\n{label_single}")
+
+
+    
+    from torchinfo import summary
+    summary(model_0, input_size=[1, 3, 64, 64]) # do a test pass through of an example input size 
