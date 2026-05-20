@@ -3,7 +3,8 @@ import requests
 from pathlib import Path
 import torchvision
 import torch
-
+from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
 
 
 
@@ -50,3 +51,24 @@ if __name__ == '__main__':
     print(f"Custom image tensor:\n{custom_image}\n")
     print(f"Custom image shape: {custom_image.shape}\n")
     print(f"Custom image dtype: {custom_image.dtype}")
+
+
+
+    # Plot custom image
+    plt.imshow(custom_image.permute(1, 2, 0)) # need to permute image dimensions from CHW -> HWC otherwise matplotlib will error
+    plt.title(f"Image shape: {custom_image.shape}")
+    plt.axis(False)
+    plt.show()
+
+
+    # Create transform pipleine to resize image
+    custom_image_transform = transforms.Compose([
+        transforms.Resize((64, 64)),
+    ])
+
+    # Transform target image
+    custom_image_transformed = custom_image_transform(custom_image)
+
+    # Print out original shape and new shape
+    print(f"Original shape: {custom_image.shape}")
+    print(f"New shape: {custom_image_transformed.shape}")
