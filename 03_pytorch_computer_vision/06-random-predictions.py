@@ -13,11 +13,32 @@ from engine import make_predictions
 import matplotlib.pyplot as plt
 
 
+from pathlib import Path
+
+# 1. Create models directory 
+MODEL_PATH = Path("models")
+MODEL_PATH.mkdir(parents=True, exist_ok=True)
+
+# 2. Create model save path 
+MODEL_NAME = "FashionMNISTModelV1.pth"
+MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
+
+
+
 def train_model():
+
     torch.manual_seed(42)
+
     model_2 = FashionMNISTModelV2(input_shape=1, 
         hidden_units=10, 
         output_shape=len(class_names)).to(device)
+    
+
+    if Path(MODEL_SAVE_PATH).is_file():
+        print(f"Loading model to: {MODEL_SAVE_PATH}")
+        model_2.load_state_dict(torch.load(f=MODEL_SAVE_PATH))
+        return model_2
+
         
     # Setup loss and optimizer
     loss_fn = nn.CrossEntropyLoss()
@@ -49,11 +70,15 @@ def train_model():
             device=device
         )
 
+    print(f"Saving model to: {MODEL_SAVE_PATH}")
+    torch.save(obj=model_2.state_dict(), # only saving the state_dict() only saves the models learned parameters
+            f=MODEL_SAVE_PATH)
+
     return model_2
 
 
 
-def plot_preditions():
+def plot_preditions(model_2):
 
     import random
     random.seed(42)
@@ -67,7 +92,7 @@ def plot_preditions():
     # View the first test sample shape and label
     print(f"Test sample image shape: {test_samples[0].shape}\nTest sample label: {test_labels[0]} ({class_names[test_labels[0]]})")
 
-    model_2 = train_model()
+    
 
     # Make predictions on test samples with model 2
     pred_probs= make_predictions(model=model_2, 
@@ -108,13 +133,20 @@ def plot_preditions():
         plt.axis(False);
 
         # 关键：保存成图片，无桌面环境不要 plt.show()
-        plt.savefig(f"{i}_my_plot.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"images/{i}_my_plot.png", dpi=300, bbox_inches='tight')
         plt.close()  # 释放内存
 
         print(f"图片已保存为：{i}_my_plot.png")
 
 
 
+
 # 2. 将所有执行逻辑放入 main 块中
 if __name__ == '__main__':
-    plot_preditions()
+
+
+    model_2 = train_model()
+
+    
+    
+    plot_preditions(model_2)
