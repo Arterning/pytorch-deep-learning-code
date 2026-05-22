@@ -1,23 +1,34 @@
-# Create a flatten layer
-flatten_model = nn.Flatten() # all nn modules function as a model (can do a forward pass)
-
-# Get a single sample
-x = train_features_batch[0]
-
-# Flatten the sample
-output = flatten_model(x) # perform forward pass
-
-# Print out what happened
-print(f"Shape before flattening: {x.shape} -> [color_channels, height, width]")
-print(f"Shape after flattening: {output.shape} -> [color_channels, height*width]")
-
-# Try uncommenting below and see what happens
-#print(x)
-#print(output)
-
-
-
+# Import PyTorch
+import torch
 from torch import nn
+
+# Import torchvision 
+import torchvision
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+from _01_prepare_data import train_data, test_data
+
+
+def flatten_single_sample():
+    # Create a flatten layer
+    flatten_model = nn.Flatten() # all nn modules function as a model (can do a forward pass)
+
+    # Get a single sample
+    x = train_features_batch[0]
+
+    # Flatten the sample
+    output = flatten_model(x) # perform forward pass
+
+    # Print out what happened
+    print(f"Shape before flattening: {x.shape} -> [color_channels, height, width]")
+    print(f"Shape after flattening: {output.shape} -> [color_channels, height*width]")
+
+    # Try uncommenting below and see what happens
+    #print(x)
+    #print(output)
+
+
+
 class FashionMNISTModelV0(nn.Module):
     def __init__(self, input_shape: int, hidden_units: int, output_shape: int):
         super().__init__()
@@ -31,9 +42,8 @@ class FashionMNISTModelV0(nn.Module):
         return self.layer_stack(x)
 
 
-
 torch.manual_seed(42)
-
+class_names = train_data.classes
 # Need to setup model with input parameters
 model_0 = FashionMNISTModelV0(input_shape=784, # one for every pixel (28x28)
     hidden_units=10, # how many units in the hidden layer
@@ -52,6 +62,7 @@ optimizer = torch.optim.SGD(params=model_0.parameters(), lr=0.1)
 
 
 from timeit import default_timer as timer 
+
 def print_train_time(start: float, end: float, device: torch.device = None):
     """Prints difference between start and end time.
 
@@ -72,6 +83,7 @@ def print_train_time(start: float, end: float, device: torch.device = None):
 
 # Import tqdm for progress bar
 from tqdm.auto import tqdm
+from _02_data_loader import train_dataloader, test_dataloader
 
 # Set the seed and start the timer
 torch.manual_seed(42)
@@ -144,8 +156,10 @@ total_train_time_model_0 = print_train_time(start=train_time_start_on_cpu,
 
 
 
+# 训练完成后对测试数据集进行测试
 
 torch.manual_seed(42)
+
 def eval_model(model: torch.nn.Module, 
                data_loader: torch.utils.data.DataLoader, 
                loss_fn: torch.nn.Module, 
@@ -185,5 +199,6 @@ def eval_model(model: torch.nn.Module,
 model_0_results = eval_model(model=model_0, data_loader=test_dataloader,
     loss_fn=loss_fn, accuracy_fn=accuracy_fn
 )
-model_0_results
+
+print(model_0_results)
 

@@ -40,6 +40,7 @@ def show_a_sample():
     torch.manual_seed(42)
     random_idx = torch.randint(0, len(train_features_batch), size=[1]).item()
     img, label = train_features_batch[random_idx], train_labels_batch[random_idx]
+    class_names = train_data.classes
     plt.imshow(img.squeeze(), cmap="gray")
     plt.title(class_names[label])
     plt.axis("Off");
