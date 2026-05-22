@@ -9,39 +9,6 @@ from _02_data_loader import train_dataloader, test_dataloader
 from helper_functions import print_train_time
 
 
-# 在每个线性层之间插入非线性函数 nn.ReLU() 
-# Create a model with non-linear and linear layers
-class FashionMNISTModelV1(nn.Module):
-    def __init__(self, input_shape: int, hidden_units: int, output_shape: int):
-        super().__init__()
-        self.layer_stack = nn.Sequential(
-            nn.Flatten(), # flatten inputs into single vector
-            nn.Linear(in_features=input_shape, out_features=hidden_units),
-            nn.ReLU(),
-            nn.Linear(in_features=hidden_units, out_features=output_shape),
-            nn.ReLU()
-        )
-    
-    def forward(self, x: torch.Tensor):
-        return self.layer_stack(x)
-
-
-torch.manual_seed(42)
-model_1 = FashionMNISTModelV1(input_shape=784, # number of input features
-    hidden_units=10,
-    output_shape=len(class_names) # number of output classes desired
-).to(device) # send model to GPU if it's available
-next(model_1.parameters()).device # check model device
-
-
-from helper_functions import accuracy_fn
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(params=model_1.parameters(), 
-                            lr=0.1)
-
-
-
-
 
 def train_step(model: torch.nn.Module,
                data_loader: torch.utils.data.DataLoader,
@@ -107,45 +74,8 @@ def test_step(data_loader: torch.utils.data.DataLoader,
         print(f"Test loss: {test_loss:.5f} | Test accuracy: {test_acc:.2f}%\n")
 
 
-torch.manual_seed(42)
-
-# Measure time
-from timeit import default_timer as timer
-train_time_start_on_gpu = timer()
-
-epochs = 3
-for epoch in tqdm(range(epochs)):
-    print(f"Epoch: {epoch}\n---------")
-    train_step(data_loader=train_dataloader, 
-        model=model_1, 
-        loss_fn=loss_fn,
-        optimizer=optimizer,
-        accuracy_fn=accuracy_fn
-    )
-    test_step(data_loader=test_dataloader,
-        model=model_1,
-        loss_fn=loss_fn,
-        accuracy_fn=accuracy_fn
-    )
-
-train_time_end_on_gpu = timer()
-total_train_time_model_1 = print_train_time(start=train_time_start_on_gpu,
-                                            end=train_time_end_on_gpu,
-                                            device=device)
-
-torch.manual_seed(42)
-
-# Note: This will error due to `eval_model()` not using device agnostic code 
-# model_1_results = eval_model(model=model_1, 
-#     data_loader=test_dataloader,
-#     loss_fn=loss_fn, 
-#     accuracy_fn=accuracy_fn) 
-# model_1_results 
 
 
-
-# Move values to device
-torch.manual_seed(42)
 def eval_model(model: torch.nn.Module, 
                data_loader: torch.utils.data.DataLoader, 
                loss_fn: torch.nn.Module, 
@@ -179,18 +109,3 @@ def eval_model(model: torch.nn.Module,
     return {"model_name": model.__class__.__name__, # only works when model was created with a class
             "model_loss": loss.item(),
             "model_acc": acc}
-
-# Calculate model 1 results with device-agnostic code 
-model_1_results = eval_model(model=model_1, data_loader=test_dataloader,
-    loss_fn=loss_fn, accuracy_fn=accuracy_fn,
-    device=device
-)
-
-# 对于较小的模型和数据集，CPU 实际上可能是最佳的计算场所。
-
-print(model_1_results)
-
-# Train time on cpu: 29.797 seconds
-# {'model_name': 'FashionMNISTModelV1', 'model_loss': 0.6850008964538574, 'model_acc': 75.01996805111821}
-
-# 在我们的模型中添加非线性反而使其性能比基线更差。
