@@ -6,12 +6,50 @@ from device_name import device
 class_names = train_data.classes
 from tqdm.auto import tqdm
 from _02_data_loader import train_dataloader, test_dataloader
+from _05_build_cnn_model import FashionMNISTModelV2
 from helper_functions import print_train_time, accuracy_fn
 from engine import make_predictions
 # Import matplotlib for visualization
 import matplotlib.pyplot as plt
 
 
+def train_model():
+    torch.manual_seed(42)
+    model_2 = FashionMNISTModelV2(input_shape=1, 
+        hidden_units=10, 
+        output_shape=len(class_names)).to(device)
+        
+    # Setup loss and optimizer
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(params=model_2.parameters(), 
+                                lr=0.1)
+
+
+    torch.manual_seed(42)
+
+    # Measure time
+    from timeit import default_timer as timer
+    from engine import train_step, test_step, eval_model
+
+    # Train and test model 
+    epochs = 3
+    for epoch in tqdm(range(epochs)):
+        print(f"Epoch: {epoch}\n---------")
+        train_step(data_loader=train_dataloader, 
+            model=model_2, 
+            loss_fn=loss_fn,
+            optimizer=optimizer,
+            accuracy_fn=accuracy_fn,
+            device=device
+        )
+        test_step(data_loader=test_dataloader,
+            model=model_2,
+            loss_fn=loss_fn,
+            accuracy_fn=accuracy_fn,
+            device=device
+        )
+
+    return model_2
 
 
 
@@ -29,6 +67,7 @@ def plot_preditions():
     # View the first test sample shape and label
     print(f"Test sample image shape: {test_samples[0].shape}\nTest sample label: {test_labels[0]} ({class_names[test_labels[0]]})")
 
+    model_2 = train_model()
 
     # Make predictions on test samples with model 2
     pred_probs= make_predictions(model=model_2, 
@@ -38,7 +77,8 @@ def plot_preditions():
     pred_classes = pred_probs.argmax(dim=1)
 
     # View first two prediction probabilities list
-    pred_probs[:2]
+    print(pred_probs[:2])
+    print(pred_classes)
 
     # Plot predictions
     plt.figure(figsize=(9, 9))
@@ -66,3 +106,15 @@ def plot_preditions():
         else:
             plt.title(title_text, fontsize=10, c="r") # red text if wrong
         plt.axis(False);
+
+        # 关键：保存成图片，无桌面环境不要 plt.show()
+        plt.savefig(f"{i}_my_plot.png", dpi=300, bbox_inches='tight')
+        plt.close()  # 释放内存
+
+        print(f"图片已保存为：{i}_my_plot.png")
+
+
+
+# 2. 将所有执行逻辑放入 main 块中
+if __name__ == '__main__':
+    plot_preditions()

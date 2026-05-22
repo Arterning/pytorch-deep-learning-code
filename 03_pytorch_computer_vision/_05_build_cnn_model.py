@@ -57,11 +57,10 @@ class FashionMNISTModelV2(nn.Module):
         # print(x.shape)
         return x
 
-torch.manual_seed(42)
-model_2 = FashionMNISTModelV2(input_shape=1, 
-    hidden_units=10, 
-    output_shape=len(class_names)).to(device)
-model_2
+
+
+
+
 
 
 
@@ -148,63 +147,71 @@ def print_simple_batch():
 
 
 
+def train_model():
+    torch.manual_seed(42)
+    model_2 = FashionMNISTModelV2(input_shape=1, 
+        hidden_units=10, 
+        output_shape=len(class_names)).to(device)
+    model_2
 
-# Setup loss and optimizer
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(params=model_2.parameters(), 
-                             lr=0.1)
+    # Setup loss and optimizer
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(params=model_2.parameters(), 
+                                lr=0.1)
 
 
 
-torch.manual_seed(42)
+    torch.manual_seed(42)
 
-# Measure time
-from timeit import default_timer as timer
-from engine import train_step, test_step, eval_model
+    # Measure time
+    from timeit import default_timer as timer
+    from engine import train_step, test_step, eval_model
 
-train_time_start_model_2 = timer()
+    train_time_start_model_2 = timer()
 
-# Train and test model 
-epochs = 3
-for epoch in tqdm(range(epochs)):
-    print(f"Epoch: {epoch}\n---------")
-    train_step(data_loader=train_dataloader, 
-        model=model_2, 
-        loss_fn=loss_fn,
-        optimizer=optimizer,
-        accuracy_fn=accuracy_fn,
-        device=device
-    )
-    test_step(data_loader=test_dataloader,
+    # Train and test model 
+    epochs = 3
+    for epoch in tqdm(range(epochs)):
+        print(f"Epoch: {epoch}\n---------")
+        train_step(data_loader=train_dataloader, 
+            model=model_2, 
+            loss_fn=loss_fn,
+            optimizer=optimizer,
+            accuracy_fn=accuracy_fn,
+            device=device
+        )
+        test_step(data_loader=test_dataloader,
+            model=model_2,
+            loss_fn=loss_fn,
+            accuracy_fn=accuracy_fn,
+            device=device
+        )
+
+    train_time_end_model_2 = timer()
+    total_train_time_model_2 = print_train_time(start=train_time_start_model_2,
+                                            end=train_time_end_model_2,
+                                            device=device)
+
+    # Get model_2 results 
+    model_2_results = eval_model(
         model=model_2,
+        data_loader=test_dataloader,
         loss_fn=loss_fn,
-        accuracy_fn=accuracy_fn,
-        device=device
+        accuracy_fn=accuracy_fn
     )
 
-train_time_end_model_2 = timer()
-total_train_time_model_2 = print_train_time(start=train_time_start_model_2,
-                                           end=train_time_end_model_2,
-                                           device=device)
-
-# Get model_2 results 
-model_2_results = eval_model(
-    model=model_2,
-    data_loader=test_dataloader,
-    loss_fn=loss_fn,
-    accuracy_fn=accuracy_fn
-)
-
-# CNN（ FashionMNISTModelV2 ）模型表现最好（损失最低，准确率最高），但训练时间最长。
-# Train time on cpu: 64.813 seconds
-# {'model_name': 'FashionMNISTModelV2', 'model_loss': 0.31291094422340393, 'model_acc': 88.7979233226837}
-print(model_2_results)
+    # CNN（ FashionMNISTModelV2 ）模型表现最好（损失最低，准确率最高），但训练时间最长。
+    # Train time on cpu: 64.813 seconds
+    # {'model_name': 'FashionMNISTModelV2', 'model_loss': 0.31291094422340393, 'model_acc': 88.7979233226837}
+    print(model_2_results)
 
 
 
 
 
-
+# 2. 将所有执行逻辑放入 main 块中
+if __name__ == '__main__':
+    train_model()
 
 
 
