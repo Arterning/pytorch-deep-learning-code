@@ -42,3 +42,7 @@ def main():
 
   # Plot sigmoid activated toy tensor
   plt.plot(sigmoid(A));
+
+
+if __name__ == "__main__":
+    main()
