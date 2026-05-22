@@ -1,5 +1,17 @@
-from torch.utils.data import DataLoader
+# Import PyTorch
+import torch
+from torch import nn
 
+# Import torchvision 
+import torchvision
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+
+# Import matplotlib for visualization
+import matplotlib.pyplot as plt
+
+from torch.utils.data import DataLoader
+from _01_prepare_data import train_data, test_data
 # Setup the batch size hyperparameter
 BATCH_SIZE = 32
 
@@ -23,14 +35,15 @@ print(f"Length of test dataloader: {len(test_dataloader)} batches of {BATCH_SIZE
 train_features_batch, train_labels_batch = next(iter(train_dataloader))
 train_features_batch.shape, train_labels_batch.shape
 
-# Show a sample
-torch.manual_seed(42)
-random_idx = torch.randint(0, len(train_features_batch), size=[1]).item()
-img, label = train_features_batch[random_idx], train_labels_batch[random_idx]
-plt.imshow(img.squeeze(), cmap="gray")
-plt.title(class_names[label])
-plt.axis("Off");
-print(f"Image size: {img.shape}")
-print(f"Label: {label}, label size: {label.shape}")
+def show_a_sample():
+    # Show a sample
+    torch.manual_seed(42)
+    random_idx = torch.randint(0, len(train_features_batch), size=[1]).item()
+    img, label = train_features_batch[random_idx], train_labels_batch[random_idx]
+    plt.imshow(img.squeeze(), cmap="gray")
+    plt.title(class_names[label])
+    plt.axis("Off");
+    print(f"Image size: {img.shape}")
+    print(f"Label: {label}, label size: {label.shape}")
 
 
