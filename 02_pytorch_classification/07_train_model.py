@@ -7,6 +7,7 @@ from _06_train_data import NUM_CLASSES, NUM_FEATURES, RANDOM_SEED, X_blob_train,
 import matplotlib.pyplot as plt
 from helper_functions import plot_predictions, plot_decision_boundary
 from sklearn.datasets import make_circles
+from torchmetrics import Accuracy
 
 
 # Create device agnostic code
@@ -91,8 +92,6 @@ def train_loop():
     # Set number of epochs
     epochs = 100
 
-    
-
     for epoch in range(epochs):
         ### Training
         model_4.train()
@@ -130,44 +129,57 @@ def train_loop():
         if epoch % 10 == 0:
             print(f"Epoch: {epoch} | Loss: {loss:.5f}, Acc: {acc:.2f}% | Test Loss: {test_loss:.5f}, Test Acc: {test_acc:.2f}%") 
 
+    return model_4
+
+
+
+def make_predict(model_4):
+    # Make predictions
+    model_4.eval()
+    with torch.inference_mode():
+        y_logits = model_4(X_blob_test)
+
+    # View the first 10 predictions
+    y_logits[:10]
+
+    # Turn predicted logits in prediction probabilities
+    y_pred_probs = torch.softmax(y_logits, dim=1)
+
+    # Turn prediction probabilities into prediction labels
+    y_preds = y_pred_probs.argmax(dim=1)
+
+    # Compare first 10 model preds and test labels
+    print(f"Predictions: {y_preds[:10]}\nLabels: {y_blob_test[:10]}")
+    print(f"Test accuracy: {accuracy_fn(y_true=y_blob_test, y_pred=y_preds)}%")
+
+    # Setup metric and make sure it's on the target device
+    torchmetrics_accuracy = Accuracy(task='multiclass', num_classes=4).to(device)
+
+    # Calculate accuracy
+    torchmetrics_accuracy(y_preds, y_blob_test)
+
+
+def plot_predict(model_4):
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.title("Train")
+    plot_decision_boundary(model_4, X_blob_train, y_blob_train)
+    plt.subplot(1, 2, 2)
+    plt.title("Test")
+    plot_decision_boundary(model_4, X_blob_test, y_blob_test)
+
+    plt.savefig(f"predict.png", dpi=300, bbox_inches='tight')
+    plt.close()  # 释放内存
+
+
+
 
 if __name__ == "__main__":
-    train_loop()
 
+    model = train_loop()
 
+    make_predict(model)
 
+    plot_predict(model)
 
-
-
-# # Make predictions
-# model_4.eval()
-# with torch.inference_mode():
-#     y_logits = model_4(X_blob_test)
-
-# # View the first 10 predictions
-# y_logits[:10]
-
-# # Turn predicted logits in prediction probabilities
-# y_pred_probs = torch.softmax(y_logits, dim=1)
-
-# # Turn prediction probabilities into prediction labels
-# y_preds = y_pred_probs.argmax(dim=1)
-
-# # Compare first 10 model preds and test labels
-# print(f"Predictions: {y_preds[:10]}\nLabels: {y_blob_test[:10]}")
-# print(f"Test accuracy: {accuracy_fn(y_true=y_blob_test, y_pred=y_preds)}%")
-
-
-
-
-# plt.figure(figsize=(12, 6))
-# plt.subplot(1, 2, 1)
-# plt.title("Train")
-# plot_decision_boundary(model_4, X_blob_train, y_blob_train)
-# plt.subplot(1, 2, 2)
-# plt.title("Test")
-# plot_decision_boundary(model_4, X_blob_test, y_blob_test)
-
-
-
-
+    
