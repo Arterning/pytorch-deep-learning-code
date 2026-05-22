@@ -195,7 +195,9 @@ model_2_results = eval_model(
     accuracy_fn=accuracy_fn
 )
 
-
+# CNN（ FashionMNISTModelV2 ）模型表现最好（损失最低，准确率最高），但训练时间最长。
+# Train time on cpu: 64.813 seconds
+# {'model_name': 'FashionMNISTModelV2', 'model_loss': 0.31291094422340393, 'model_acc': 88.7979233226837}
 print(model_2_results)
 
 
