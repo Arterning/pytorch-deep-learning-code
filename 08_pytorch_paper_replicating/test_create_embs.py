@@ -4,6 +4,8 @@ import torchvision
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 import data_setup, engine, utils
+from helper_functions import set_seeds
+from patch_embedding import PatchEmbedding
 
 
 # Setup directories
@@ -76,7 +78,60 @@ for i, idx in enumerate(random_indexes):
     image_conv_feature_map = image_out_of_conv[:, idx, :, :] # index on the output tensor of the convolutional layer
     axs[i].imshow(image_conv_feature_map.squeeze().detach().numpy())
     axs[i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[]);
-    plt.savefig(f"{idx}_conv_feature_map.png", dpi=300, bbox_inches='tight')
+    # plt.savefig(f"{idx}_conv_feature_map.png", dpi=300, bbox_inches='tight')
 
 
 plt.close()
+
+
+
+
+# Create flatten layer
+flatten = nn.Flatten(start_dim=2, # flatten feature_map_height (dimension 2)
+                     end_dim=3) # flatten feature_map_width (dimension 3)
+
+
+# 1. View single image
+# plt.imshow(image.permute(1, 2, 0)) # adjust for matplotlib
+# plt.title(class_names[label])
+# plt.axis(False);
+print(f"Original image shape: {image.shape}")
+
+# 2. Turn image into feature maps
+image_out_of_conv = conv2d(image.unsqueeze(0)) # add batch dimension to avoid shape errors
+print(f"Image feature map shape: {image_out_of_conv.shape}")
+
+# 3. Flatten the feature maps
+image_out_of_conv_flattened = flatten(image_out_of_conv)
+print(f"Flattened image feature map shape: {image_out_of_conv_flattened.shape}")
+
+
+# Get flattened image patch embeddings in right shape
+image_out_of_conv_flattened_reshaped = image_out_of_conv_flattened.permute(0, 2, 1) # [batch_size, P^2•C, N] -> [batch_size, N, P^2•C]
+print(f"Patch embedding sequence shape: {image_out_of_conv_flattened_reshaped.shape} -> [batch_size, num_patches, embedding_size]")
+
+
+
+# Get a single flattened feature map
+single_flattened_feature_map = image_out_of_conv_flattened_reshaped[:, :, 0] # index: (batch_size, number_of_patches, embedding_dimension)
+
+# Plot the flattened feature map visually
+plt.figure(figsize=(22, 22))
+plt.imshow(single_flattened_feature_map.detach().numpy())
+plt.title(f"Flattened feature map shape: {single_flattened_feature_map.shape}")
+plt.axis(False);
+plt.savefig(f"flattened_feature_map.png", dpi=300, bbox_inches='tight')
+
+
+
+set_seeds()
+
+# Create an instance of patch embedding layer
+patchify = PatchEmbedding(in_channels=3,
+                          patch_size=16,
+                          embedding_dim=768)
+
+# Pass a single image through
+print(f"Input image shape: {image.unsqueeze(0).shape}")
+patch_embedded_image = patchify(image.unsqueeze(0)) # add an extra batch dimension on the 0th index, otherwise will error
+print(f"Output patch embedding shape: {patch_embedded_image.shape}")
