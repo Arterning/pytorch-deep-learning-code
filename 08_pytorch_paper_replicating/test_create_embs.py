@@ -377,3 +377,77 @@ plot_loss_curves(results)
 
 plt.savefig("vit_loss_curves.png", dpi=300, bbox_inches='tight')
 plt.close()
+
+
+
+
+
+
+
+
+
+# 1. Get pretrained weights for ViT-Base
+pretrained_vit_weights = torchvision.models.ViT_B_16_Weights.DEFAULT # requires torchvision >= 0.13, "DEFAULT" means best available
+
+# 2. Setup a ViT model instance with pretrained weights
+pretrained_vit = torchvision.models.vit_b_16(weights=pretrained_vit_weights).to(device)
+
+# 3. Freeze the base parameters
+for parameter in pretrained_vit.parameters():
+    parameter.requires_grad = False
+
+# 4. Change the classifier head (set the seeds to ensure same initialization with linear head)
+set_seeds()
+pretrained_vit.heads = nn.Linear(in_features=768, out_features=len(class_names)).to(device)
+# pretrained_vit # uncomment for model output
+
+# Get automatic transforms from pretrained ViT weights
+pretrained_vit_transforms = pretrained_vit_weights.transforms()
+print(pretrained_vit_transforms)
+
+
+# Setup dataloaders
+train_dataloader_pretrained, test_dataloader_pretrained, class_names = data_setup.create_dataloaders(train_dir=train_dir,
+                                                                                                     test_dir=test_dir,
+                                                                                                     transform=pretrained_vit_transforms,
+                                                                                                     batch_size=32) # Could increase if we had more samples, such as here: https://arxiv.org/abs/2205.01580 (there are other improvements there too...)
+
+
+# Create optimizer and loss function
+optimizer = torch.optim.Adam(params=pretrained_vit.parameters(),
+                             lr=1e-3)
+loss_fn = torch.nn.CrossEntropyLoss()
+
+# Train the classifier head of the pretrained ViT feature extractor model
+set_seeds()
+pretrained_vit_results = engine.train(model=pretrained_vit,
+                                      train_dataloader=train_dataloader_pretrained,
+                                      test_dataloader=test_dataloader_pretrained,
+                                      optimizer=optimizer,
+                                      loss_fn=loss_fn,
+                                      epochs=10,
+                                      device=device)
+
+
+# Plot the loss curves
+from helper_functions import plot_loss_curves
+
+plot_loss_curves(pretrained_vit_results)
+plt.savefig("pretrained_vit_loss_curves.png", dpi=300, bbox_inches='tight')
+plt.close()
+
+
+
+
+
+# Plot the loss curves
+from helper_functions import plot_loss_curves
+
+plot_loss_curves(pretrained_vit_results)
+
+
+from pathlib import Path
+
+# Get the model size in bytes then convert to megabytes
+pretrained_vit_model_size = Path("models/08_pretrained_vit_feature_extractor_pizza_steak_sushi.pth").stat().st_size // (1024*1024) # division converts bytes to megabytes (roughly)
+print(f"Pretrained ViT feature extractor model size: {pretrained_vit_model_size} MB")
